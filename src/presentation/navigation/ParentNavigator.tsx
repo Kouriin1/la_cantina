@@ -1,6 +1,6 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React from 'react';
 import ChildOrdersScreen from '../screens/parent/ChildOrdersScreen';
 import HistoryScreen from '../screens/parent/HistoryScreen';
 import RechargeScreen from '../screens/parent/RechargeScreen';
@@ -42,16 +42,16 @@ const ParentNavigator = () => {
             iconName = focused ? 'person-circle' : 'person-circle-outline';
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return <Ionicons name={iconName as any} size={size} color={color} />;
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: 'gray',
       })}
     >
-      <Tab.Screen name="Child Orders" component={ChildOrdersScreen} />
-      <Tab.Screen name="History" component={HistoryScreen} />
-      <Tab.Screen name="Recharge" component={RechargeScreen} />
-      <Tab.Screen name="ProfileStack" component={ProfileStackNavigator} options={{ title: 'Profile' }}/>
+      <Tab.Screen name="Child Orders" component={ChildOrdersScreen} options={{ title: 'Pedidos' }} />
+      <Tab.Screen name="History" component={HistoryScreen} options={{ title: 'Historial' }} />
+      <Tab.Screen name="Recharge" component={RechargeScreen} options={{ title: 'Recargar' }} />
+      <Tab.Screen name="ProfileStack" component={ProfileStackNavigator} options={{ title: 'Perfil' }}/>
     </Tab.Navigator>
   );
 };

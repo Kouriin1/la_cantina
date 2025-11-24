@@ -1,9 +1,9 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React from 'react';
+import ProfileScreen from '../screens/shared/ProfileScreen';
 import StudentMenuScreen from '../screens/student/StudentMenuScreen';
 import WalletScreen from '../screens/student/WalletScreen';
-import ProfileScreen from '../screens/shared/ProfileScreen';
 import { colors } from '../theme/colors';
 
 import CustomHeader from '../components/CustomHeader';
@@ -36,18 +36,18 @@ const StudentNavigator = () => {
           } else if (route.name === 'Wallet') {
             iconName = focused ? 'wallet' : 'wallet-outline';
           } else if (route.name === 'ProfileStack') {
-            iconName = focused ? 'person-circle' : 'person-circle-outline';
+            iconName = focused ? 'school' : 'school-outline';
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return <Ionicons name={iconName as any} size={size} color={color} />;
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: 'gray',
       })}
     >
-      <Tab.Screen name="Menu" component={StudentMenuScreen} />
-      <Tab.Screen name="Wallet" component={WalletScreen} />
-      <Tab.Screen name="ProfileStack" component={ProfileStackNavigator} options={{ title: 'Profile' }}/>
+      <Tab.Screen name="Menu" component={StudentMenuScreen} options={{ title: 'Menú' }} />
+      <Tab.Screen name="Wallet" component={WalletScreen} options={{ title: 'Billetera' }} />
+      <Tab.Screen name="ProfileStack" component={ProfileStackNavigator} options={{ title: 'Perfil' }}/>
     </Tab.Navigator>
   );
 };

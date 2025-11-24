@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
-import { Order } from '../../../domain/entities/Order';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { OrderRepositoryImpl } from '../../../data/repositories/OrderRepositoryImpl';
+import { Order } from '../../../domain/entities/Order';
 import { GetOrdersByStudentUseCase } from '../../../domain/usecases/GetOrdersByStudentUseCase';
 import Button from '../../components/Button';
-import { colors } from '../../theme/colors';
 import { useAuthStore } from '../../state/authStore';
+import { colors } from '../../theme/colors';
 
 const ChildOrdersScreen = () => {
   const { user } = useAuthStore();
@@ -35,17 +35,17 @@ const ChildOrdersScreen = () => {
 
   const renderItem = ({ item }: { item: Order }) => (
     <View style={styles.orderContainer}>
-      <Text style={styles.orderTitle}>Order from {item.student.firstName}</Text>
+      <Text style={styles.orderTitle}>Orden de {item.student.firstName}</Text>
       {item.items.map(orderItem => (
         <View key={orderItem.product.id} style={styles.itemContainer}>
           <Text>{orderItem.product.name} x {orderItem.quantity}</Text>
-          <Text>${(orderItem.product.price * orderItem.quantity).toFixed(2)}</Text>
+          <Text>Bs.S {(orderItem.product.price * orderItem.quantity).toFixed(2)}</Text>
         </View>
       ))}
-      <Text style={styles.total}>Total: ${item.total.toFixed(2)}</Text>
+      <Text style={styles.total}>Total: Bs.S {item.total.toFixed(2)}</Text>
       <View style={styles.buttonContainer}>
-        <Button title="Approve" onPress={() => handleApproval(item.id, true)} />
-        <Button title="Reject" onPress={() => handleApproval(item.id, false)} />
+        <Button title="Aprobar" onPress={() => handleApproval(item.id, true)} />
+        <Button title="Rechazar" onPress={() => handleApproval(item.id, false)} />
       </View>
     </View>
   );
@@ -53,7 +53,7 @@ const ChildOrdersScreen = () => {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <Text>Loading...</Text>
+        <Text>Cargando...</Text>
       </View>
     );
   }
@@ -64,7 +64,7 @@ const ChildOrdersScreen = () => {
       renderItem={renderItem}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.container}
-      ListEmptyComponent={<Text>No pending approvals.</Text>}
+      ListEmptyComponent={<Text>No hay aprobaciones pendientes.</Text>}
     />
   );
 };

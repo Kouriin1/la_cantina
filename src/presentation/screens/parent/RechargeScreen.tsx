@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
-import Button from '../../components/Button';
-import { colors } from '../../theme/colors';
-import { useAuthStore } from '../../state/authStore';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { TokenRepositoryImpl } from '../../../data/repositories/TokenRepositoryImpl';
+import Button from '../../components/Button';
+import { useAuthStore } from '../../state/authStore';
+import { colors } from '../../theme/colors';
 
 const RechargeScreen = () => {
   const { user } = useAuthStore();
@@ -16,11 +16,11 @@ const RechargeScreen = () => {
     try {
       const tokenRepository = new TokenRepositoryImpl();
       await tokenRepository.rechargeTokens(user.childId, parseFloat(amount));
-      alert('Recharge successful!');
+      alert('¡Recarga exitosa!');
       setAmount('');
     } catch (error) {
       console.error(error);
-      alert('Recharge failed.');
+      alert('Recarga fallida.');
     } finally {
       setLoading(false);
     }
@@ -28,15 +28,15 @@ const RechargeScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Recharge Child's Wallet</Text>
+      <Text style={styles.title}>Recargar Billetera del Estudiante</Text>
       <TextInput
         style={styles.input}
-        placeholder="Enter amount"
+        placeholder="Ingresar monto"
         keyboardType="numeric"
         value={amount}
         onChangeText={setAmount}
       />
-      <Button title="Recharge" onPress={handleRecharge} loading={loading} />
+      <Button title="Recargar" onPress={handleRecharge} loading={loading} />
     </View>
   );
 };

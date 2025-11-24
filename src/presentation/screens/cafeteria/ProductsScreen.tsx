@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput } from 'react-native';
-import { Product } from '../../../domain/entities/Product';
+import React, { useEffect, useState } from 'react';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { ProductRepositoryImpl } from '../../../data/repositories/ProductRepositoryImpl';
+import { Product } from '../../../domain/entities/Product';
 import { GetProductsUseCase } from '../../../domain/usecases/GetProductsUseCase';
 import Button from '../../components/Button';
 import { colors } from '../../theme/colors';
@@ -30,24 +30,24 @@ const ProductsScreen = () => {
     <View style={styles.productContainer}>
       <View>
         <Text style={styles.productName}>{item.name}</Text>
-        <Text>Price: ${item.price.toFixed(2)} | Stock: {item.stock}</Text>
+        <Text>Precio: Bs.S {item.price.toFixed(2)} | Stock: {item.stock}</Text>
       </View>
-      <Button title="Edit" onPress={() => {}} />
+      <Button title="Editar" onPress={() => {}} />
     </View>
   );
 
   if (loading) {
     return (
       <View style={styles.centered}>
-        <Text>Loading...</Text>
+        <Text>Cargando...</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Manage Products</Text>
-      <Button title="Add New Product" onPress={() => {}} />
+      <Text style={styles.title}>Gestionar Productos</Text>
+      <Button title="Agregar Nuevo Producto" onPress={() => {}} />
       <FlatList
         data={products}
         renderItem={renderItem}
