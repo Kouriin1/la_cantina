@@ -46,5 +46,11 @@ To learn more about developing your project with Expo, look at the following res
 
 Join our community of developers creating universal apps.
 
+ start
+Para hacer login en las distintas vistas: 
+- email y password: parent@gmail.com, 12345
+- email y password: aplicacio@gmail.com, 12345
+- email y password: cafeteria@gmail.com, 12345
+
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
