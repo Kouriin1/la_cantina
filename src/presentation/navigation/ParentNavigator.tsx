@@ -39,7 +39,7 @@ const ParentNavigator = () => {
           } else if (route.name === 'Recharge') {
             iconName = focused ? 'card' : 'card-outline';
           } else if (route.name === 'ProfileStack') {
-            iconName = focused ? 'person-circle' : 'person-circle-outline';
+            iconName = focused ? 'people' : 'people-outline';
           }
 
           return <Ionicons name={iconName as any} size={size} color={color} />;
@@ -51,7 +51,7 @@ const ParentNavigator = () => {
       <Tab.Screen name="Child Orders" component={ChildOrdersScreen} options={{ title: 'Pedidos' }} />
       <Tab.Screen name="History" component={HistoryScreen} options={{ title: 'Historial' }} />
       <Tab.Screen name="Recharge" component={RechargeScreen} options={{ title: 'Recargar' }} />
-      <Tab.Screen name="ProfileStack" component={ProfileStackNavigator} options={{ title: 'Perfil' }}/>
+      <Tab.Screen name="ProfileStack" component={ProfileStackNavigator} options={{ title: 'Representante' }} />
     </Tab.Navigator>
   );
 };

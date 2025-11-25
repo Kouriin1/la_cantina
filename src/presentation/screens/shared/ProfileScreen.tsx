@@ -45,14 +45,23 @@ const ProfileScreen = () => {
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
-          <Ionicons 
-            name={user?.role === 'student' ? 'school' : user?.role === 'cafeteria' ? 'restaurant' : 'person'} 
-            size={60} 
-            color={colors.white} 
+          <Ionicons
+            name={user?.role === 'student' ? 'school' : user?.role === 'cafeteria' ? 'restaurant' : 'person'}
+            size={60}
+            color={colors.white}
           />
         </View>
         <Text style={styles.name}>{user?.firstName} {user?.lastName}</Text>
-        <Text style={styles.role}>{user?.role === 'student' ? 'Estudiante' : user?.role === 'parent' ? 'Representante' : 'Cantina'}</Text>
+        <View style={styles.roleContainer}>
+          <Ionicons
+            name={user?.role === 'student' ? 'school' : user?.role === 'cafeteria' ? 'restaurant' : 'people'}
+            size={18}
+            color="rgba(255,255,255,0.9)"
+          />
+          <Text style={styles.role}>
+            {user?.role === 'student' ? 'Estudiante' : user?.role === 'parent' ? 'Representante' : 'Cantina'}
+          </Text>
+        </View>
       </View>
 
       {user?.role === 'student' && (
@@ -133,12 +142,22 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: colors.white,
-    marginBottom: 4,
+    marginBottom: 8,
+  },
+  roleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   role: {
     fontSize: 16,
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.9)',
     textTransform: 'capitalize',
+    fontWeight: '600',
   },
   qrSection: {
     alignItems: 'center',

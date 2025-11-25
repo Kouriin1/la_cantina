@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
 import ProfileScreen from '../screens/shared/ProfileScreen';
+import CartScreen from '../screens/student/CartScreen';
 import StudentMenuScreen from '../screens/student/StudentMenuScreen';
 import WalletScreen from '../screens/student/WalletScreen';
 import { colors } from '../theme/colors';
@@ -13,6 +14,7 @@ import SettingsScreen from '../screens/shared/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
 const ProfileStack = createNativeStackNavigator();
+const MenuStack = createNativeStackNavigator();
 
 const ProfileStackNavigator = () => {
   return (
@@ -20,6 +22,15 @@ const ProfileStackNavigator = () => {
       <ProfileStack.Screen name="Profile" component={ProfileScreen} />
       <ProfileStack.Screen name="Settings" component={SettingsScreen} />
     </ProfileStack.Navigator>
+  );
+};
+
+const MenuStackNavigator = () => {
+  return (
+    <MenuStack.Navigator screenOptions={{ headerShown: false }}>
+      <MenuStack.Screen name="MenuList" component={StudentMenuScreen} />
+      <MenuStack.Screen name="Cart" component={CartScreen} />
+    </MenuStack.Navigator>
   );
 };
 
@@ -31,7 +42,7 @@ const StudentNavigator = () => {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
-          if (route.name === 'Menu') {
+          if (route.name === 'MenuStack') {
             iconName = focused ? 'fast-food' : 'fast-food-outline';
           } else if (route.name === 'Wallet') {
             iconName = focused ? 'wallet' : 'wallet-outline';
@@ -45,9 +56,9 @@ const StudentNavigator = () => {
         tabBarInactiveTintColor: 'gray',
       })}
     >
-      <Tab.Screen name="Menu" component={StudentMenuScreen} options={{ title: 'Menú' }} />
+      <Tab.Screen name="MenuStack" component={MenuStackNavigator} options={{ title: 'Menú' }} />
       <Tab.Screen name="Wallet" component={WalletScreen} options={{ title: 'Billetera' }} />
-      <Tab.Screen name="ProfileStack" component={ProfileStackNavigator} options={{ title: 'Perfil' }}/>
+      <Tab.Screen name="ProfileStack" component={ProfileStackNavigator} options={{ title: 'Estudiante' }} />
     </Tab.Navigator>
   );
 };

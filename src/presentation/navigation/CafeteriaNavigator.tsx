@@ -47,7 +47,7 @@ const CafeteriaNavigator = () => {
     >
       <Tab.Screen name="Orders" component={AdminPanelScreen} options={{ title: 'Pedidos' }} />
       <Tab.Screen name="Products" component={ProductsScreen} options={{ title: 'Productos' }} />
-      <Tab.Screen name="ProfileStack" component={ProfileStackNavigator} options={{ title: 'Perfil' }}/>
+      <Tab.Screen name="ProfileStack" component={ProfileStackNavigator} options={{ title: 'Cantina' }} />
     </Tab.Navigator>
   );
 };
