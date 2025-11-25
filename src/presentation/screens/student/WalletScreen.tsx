@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { TokenRepositoryImpl } from '../../../data/repositories/TokenRepositoryImpl';
@@ -33,75 +34,143 @@ const WalletScreen = () => {
     fetchData();
   }, [user]);
 
-  const renderItem = ({ item }: { item: TokenTransaction }) => (
-    <View style={styles.transactionContainer}>
-      <View style={styles.transactionIcon}>
-        <Ionicons 
-          name={item.amount > 0 ? "arrow-down" : "arrow-up"} 
-          size={20} 
-          color={item.amount > 0 ? colors.success : colors.danger} 
-        />
+  const renderItem = ({ item }: { item: TokenTransaction }) => {
+    const isPositive = item.amount > 0;
+    const transactionTypeText =
+      item.type === 'recharge' ? 'Recarga' :
+        item.type === 'purchase' ? 'Compra' :
+          item.type;
+
+    return (
+      <View style={styles.transactionContainer}>
+        <LinearGradient
+          colors={isPositive ? ['#61C9A8', '#4FB896'] : ['#ED9B40', '#E8872E']}
+          style={styles.transactionIcon}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Ionicons
+            name={isPositive ? "arrow-down" : "arrow-up"}
+            size={22}
+            color="#fff"
+          />
+        </LinearGradient>
+        <View style={styles.transactionDetails}>
+          <Text style={styles.transactionType}>{transactionTypeText}</Text>
+          <View style={styles.transactionDateRow}>
+            <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
+            <Text style={styles.transactionDate}>
+              {new Date(item.createdAt).toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+              })}
+            </Text>
+          </View>
+        </View>
+        <Text style={[styles.transactionAmount, isPositive ? styles.amountPositive : styles.amountNegative]}>
+          {isPositive ? '+' : ''}{item.amount.toFixed(2)} Bs.S
+        </Text>
       </View>
-      <View style={styles.transactionDetails}>
-        <Text style={styles.transactionType}>{item.type === 'recharge' ? 'Recarga' : item.type === 'purchase' ? 'Compra' : item.type}</Text>
-        <Text style={styles.transactionDate}>{new Date(item.createdAt).toLocaleDateString()}</Text>
-      </View>
-      <Text style={[styles.transactionAmount, item.amount > 0 ? styles.amountPositive : styles.amountNegative]}>
-        {item.amount > 0 ? '+' : ''}{item.amount.toFixed(2)} Bs.S
-      </Text>
-    </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
       <View style={styles.centered}>
-        <Text>Cargando...</Text>
+        <Ionicons name="wallet" size={60} color={colors.primary} />
+        <Text style={styles.loadingText}>Cargando billetera...</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.card}>
+      {/* Balance Card con gradiente premium */}
+      <LinearGradient
+        colors={['#B8956A', '#A67C52', '#B8956A']}
+        style={styles.card}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
         <View style={styles.cardHeader}>
           <View style={styles.iconContainer}>
-            <Ionicons name="wallet-outline" size={24} color={colors.white} />
+            <Ionicons name="wallet" size={28} color="#fff" />
           </View>
-          <Text style={styles.cardLabel}>Saldo disponible</Text>
-          <TouchableOpacity style={styles.rechargeButton}>
-            <Ionicons name="flash" size={16} color={colors.primary} />
-            <Text style={styles.rechargeText}>Recargar</Text>
+          <Text style={styles.cardLabel}>Saldo Disponible</Text>
+          <TouchableOpacity style={styles.rechargeButton} activeOpacity={0.8}>
+            <LinearGradient
+              colors={['#61C9A8', '#4FB896']}
+              style={styles.rechargeButtonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Ionicons name="flash" size={18} color="#fff" />
+              <Text style={styles.rechargeText}>Recargar</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
-        
-        <Text style={styles.balanceText}>Bs.S {balance.toFixed(2).replace('.', ',')}</Text>
-        
-        {balance < 10 && (
-          <View style={styles.lowBalanceTag}>
-            <Text style={styles.lowBalanceText}>Saldo bajo</Text>
-          </View>
-        )}
 
+        <View style={styles.balanceContainer}>
+          <Text style={styles.balanceText}>Bs.S {balance.toFixed(2)}</Text>
+          {balance < 10 && (
+            <View style={styles.lowBalanceTag}>
+              <Ionicons name="alert-circle" size={14} color="#fff" />
+              <Text style={styles.lowBalanceText}>Saldo Bajo</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Progress bar mejorado */}
         <View style={styles.progressContainer}>
           <View style={styles.progressHeader}>
-            <Text style={styles.progressLabel}>Nivel de saldo</Text>
-            <Text style={styles.progressValue}>{Math.min(Math.max((balance / 100) * 100, 0), 100).toFixed(0)}%</Text>
+            <Text style={styles.progressLabel}>
+              <Ionicons name="trending-up" size={14} color="rgba(255,255,255,0.8)" /> Nivel de saldo
+            </Text>
+            <Text style={styles.progressValue}>
+              {Math.min(Math.max((balance / 100) * 100, 0), 100).toFixed(0)}%
+            </Text>
           </View>
           <View style={styles.progressBarBackground}>
-            <View style={[styles.progressBarFill, { width: `${Math.min(Math.max((balance / 100) * 100, 0), 100)}%` }]} />
+            <LinearGradient
+              colors={['#61C9A8', '#4FB896']}
+              style={[styles.progressBarFill, { width: `${Math.min(Math.max((balance / 100) * 100, 0), 100)}%` }]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            />
           </View>
         </View>
+
+        {/* Decorative elements */}
+        <View style={styles.decorativeCircle1} />
+        <View style={styles.decorativeCircle2} />
+      </LinearGradient>
+
+      {/* Transaction History */}
+      <View style={styles.historyHeader}>
+        <Text style={styles.sectionTitle}>
+          <Ionicons name="time-outline" size={22} color={colors.text} /> Historial de Transacciones
+        </Text>
+        <TouchableOpacity style={styles.filterButton}>
+          <Ionicons name="filter" size={18} color={colors.primary} />
+        </TouchableOpacity>
       </View>
 
-      <Text style={styles.sectionTitle}>Historial de transacciones</Text>
-      
       <FlatList
         data={transactions}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
-        ListEmptyComponent={<Text style={styles.emptyText}>No hay transacciones recientes.</Text>}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconContainer}>
+              <Ionicons name="receipt-outline" size={60} color="#DFE6E9" />
+            </View>
+            <Text style={styles.emptyTitle}>No hay transacciones</Text>
+            <Text style={styles.emptyText}>Tus transacciones aparecerán aquí</Text>
+          </View>
+        }
       />
     </View>
   );
@@ -110,114 +179,189 @@ const WalletScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: colors.background,
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.background,
+  },
+  loadingText: {
+    color: colors.textSecondary,
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '500',
   },
   card: {
-    backgroundColor: colors.primary,
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 24,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 8 },
+    borderRadius: 30,
+    padding: 28,
+    margin: 20,
+    marginBottom: 16,
+    shadowColor: '#B8956A',
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 10,
+    shadowRadius: 20,
+    elevation: 12,
+    overflow: 'hidden',
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    width: 50,
+    height: 50,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   cardLabel: {
-    color: colors.white,
+    color: 'rgba(255,255,255,0.9)',
     fontSize: 16,
     flex: 1,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   rechargeButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#61C9A8',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  rechargeButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
     borderRadius: 20,
+    gap: 6,
   },
   rechargeText: {
-    color: colors.primary,
+    color: '#fff',
     fontWeight: 'bold',
-    marginLeft: 4,
     fontSize: 14,
+    letterSpacing: 0.3,
+  },
+  balanceContainer: {
+    marginBottom: 24,
   },
   balanceText: {
     color: colors.white,
-    fontSize: 48,
+    fontSize: 52,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 12,
+    letterSpacing: 1,
   },
   lowBalanceTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.danger,
     alignSelf: 'flex-start',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    marginBottom: 24,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    gap: 6,
+    shadowColor: colors.danger,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   lowBalanceText: {
     color: colors.white,
     fontWeight: 'bold',
     fontSize: 12,
+    letterSpacing: 0.5,
   },
   progressContainer: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 16,
     padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   progressHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 10,
+    alignItems: 'center',
   },
   progressLabel: {
-    color: colors.white,
+    color: 'rgba(255,255,255,0.9)',
     fontSize: 14,
-    opacity: 0.8,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   progressValue: {
     color: colors.white,
     fontWeight: 'bold',
+    fontSize: 16,
   },
   progressBarBackground: {
-    height: 8,
+    height: 10,
     backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 4,
+    borderRadius: 5,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: colors.success,
-    borderRadius: 4,
+    borderRadius: 5,
+  },
+  decorativeCircle1: {
+    position: 'absolute',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(97, 201, 168, 0.1)',
+    top: -50,
+    right: -50,
+  },
+  decorativeCircle2: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(237, 155, 64, 0.1)',
+    bottom: -30,
+    left: -30,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: colors.text,
-    marginBottom: 16,
+    letterSpacing: 0.3,
+  },
+  filterButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   listContainer: {
+    paddingHorizontal: 20,
     paddingBottom: 20,
   },
   transactionContainer: {
@@ -225,52 +369,78 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.white,
     padding: 16,
-    borderRadius: 16,
+    borderRadius: 18,
     marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
   transactionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.background,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 14,
   },
   transactionDetails: {
     flex: 1,
   },
   transactionType: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.text,
-    marginBottom: 4,
+    marginBottom: 6,
+    letterSpacing: 0.2,
+  },
+  transactionDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   transactionDate: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textSecondary,
+    fontWeight: '500',
   },
   transactionAmount: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 'bold',
+    letterSpacing: 0.3,
   },
   amountPositive: {
     color: colors.success,
   },
   amountNegative: {
-    color: colors.danger,
+    color: colors.secondary,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#F5F6FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 8,
   },
   emptyText: {
     textAlign: 'center',
     color: colors.textSecondary,
-    marginTop: 20,
+    fontSize: 14,
   },
 });
 
 export default WalletScreen;
-

@@ -1,33 +1,29 @@
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Text, View } from 'react-native';
 import { useAuthStore } from '../state/authStore';
-import StudentNavigator from './StudentNavigator';
-import ParentNavigator from './ParentNavigator';
 import CafeteriaNavigator from './CafeteriaNavigator';
-import { colors } from '../theme/colors';
-
-const Tab = createBottomTabNavigator();
+import ParentNavigator from './ParentNavigator';
+import StudentNavigator from './StudentNavigator';
 
 const MainNavigator = () => {
   const { user } = useAuthStore();
 
+  if (user?.role === 'student') {
+    return <StudentNavigator />;
+  }
+
+  if (user?.role === 'parent') {
+    return <ParentNavigator />;
+  }
+
+  if (user?.role === 'cafeteria') {
+    return <CafeteriaNavigator />;
+  }
+
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-      }}
-    >
-      {user?.role === 'student' && (
-        <Tab.Screen name="Student" component={StudentNavigator} />
-      )}
-      {user?.role === 'parent' && (
-        <Tab.Screen name="Parent" component={ParentNavigator} />
-      )}
-      {user?.role === 'cafeteria' && (
-        <Tab.Screen name="Cafeteria" component={CafeteriaNavigator} />
-      )}
-    </Tab.Navigator>
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>Rol de usuario desconocido</Text>
+    </View>
   );
 };
 

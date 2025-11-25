@@ -1,16 +1,32 @@
 export const colors = {
-  primary: '#0F3460', // Dark Blue from screenshot
-  secondary: '#E94560', // Red accent
-  background: '#F5F6FA', // Light Gray background
+  // Paleta principal
+  primary: '#B8956A', // Brown/Tan - Color principal cálido
+  secondary: '#ED9B40', // Orange - Acento vibrante
+  accent: '#61C9A8', // Mint Green - Acento fresco
+  cream: '#FFFEF9', // Cream - Fondo suave
+
+  // Colores de fondo
+  background: '#FFFEF9', // Cream background
   surface: '#FFFFFF', // White surface
-  text: '#1A1A1A', // Dark text
-  textSecondary: '#636E72', // Gray text
-  border: '#DFE6E9', // Light border
+
+  // Colores de texto
+  text: '#2D2D2D', // Dark text
+  textSecondary: '#6B6B6B', // Gray text
+
+  // Colores de borde
+  border: '#E8E8E8', // Light border
+
+  // Colores básicos
   white: '#FFFFFF',
   black: '#000000',
   gray: '#B2BEC3',
   lightGray: '#F5F5F5',
-  danger: '#FF4757',
-  success: '#2ED573',
-  inputBackground: '#F1F2F6', // Light gray for inputs
+
+  // Estados
+  danger: '#E74C3C',
+  success: '#61C9A8', // Usando el mint green
+  warning: '#ED9B40', // Usando el orange
+
+  // Input
+  inputBackground: '#F8F8F8',
 };
