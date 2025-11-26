@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { TokenRepositoryImpl } from '../../../data/repositories/TokenRepositoryImpl';
 import { TokenTransaction } from '../../../domain/entities/TokenTransaction';
 import { GetTransactionsByUserUseCase } from '../../../domain/usecases/GetTransactionsByUserUseCase';
@@ -34,47 +34,6 @@ const WalletScreen = () => {
     fetchData();
   }, [user]);
 
-  const renderItem = ({ item }: { item: TokenTransaction }) => {
-    const isPositive = item.amount > 0;
-    const transactionTypeText =
-      item.type === 'recharge' ? 'Recarga' :
-        item.type === 'purchase' ? 'Compra' :
-          item.type;
-
-    return (
-      <View style={styles.transactionContainer}>
-        <LinearGradient
-          colors={isPositive ? ['#61C9A8', '#4FB896'] : ['#ED9B40', '#E8872E']}
-          style={styles.transactionIcon}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Ionicons
-            name={isPositive ? "arrow-down" : "arrow-up"}
-            size={22}
-            color="#fff"
-          />
-        </LinearGradient>
-        <View style={styles.transactionDetails}>
-          <Text style={styles.transactionType}>{transactionTypeText}</Text>
-          <View style={styles.transactionDateRow}>
-            <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
-            <Text style={styles.transactionDate}>
-              {new Date(item.createdAt).toLocaleDateString('es-ES', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric'
-              })}
-            </Text>
-          </View>
-        </View>
-        <Text style={[styles.transactionAmount, isPositive ? styles.amountPositive : styles.amountNegative]}>
-          {isPositive ? '+' : ''}{item.amount.toFixed(2)} Bs.S
-        </Text>
-      </View>
-    );
-  };
-
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -85,10 +44,32 @@ const WalletScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
-      {/* Balance Card con gradiente premium */}
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+      bounces={true}
+    >
+      {/* Header con gradiente */}
       <LinearGradient
         colors={['#B8956A', '#A67C52', '#B8956A']}
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        {/* Iconos decorativos de fondo */}
+        <View style={StyleSheet.absoluteFill}>
+          <Ionicons name="wallet" size={80} color="rgba(255,255,255,0.1)" style={{ position: 'absolute', right: -20, top: -10 }} />
+          <Ionicons name="cash" size={60} color="rgba(255,255,255,0.08)" style={{ position: 'absolute', left: -10, bottom: -10 }} />
+          <Ionicons name="card" size={40} color="rgba(255,255,255,0.05)" style={{ position: 'absolute', left: '40%', top: 10 }} />
+        </View>
+        <Text style={styles.headerTitle}>Billetera</Text>
+        <Text style={styles.headerSubtitle}>Gestiona tu saldo</Text>
+      </LinearGradient>
+
+      {/* Balance Card con gradiente premium */}
+      <LinearGradient
+        colors={['#ED9B40', '#E8872E', '#ED9B40']}
         style={styles.card}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -156,13 +137,8 @@ const WalletScreen = () => {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={transactions}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
+      <View style={styles.listContainer}>
+        {transactions.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIconContainer}>
               <Ionicons name="receipt-outline" size={60} color="#DFE6E9" />
@@ -170,9 +146,50 @@ const WalletScreen = () => {
             <Text style={styles.emptyTitle}>No hay transacciones</Text>
             <Text style={styles.emptyText}>Tus transacciones aparecerán aquí</Text>
           </View>
-        }
-      />
-    </View>
+        ) : (
+          transactions.map((item) => {
+            const isPositive = item.amount > 0;
+            const transactionTypeText =
+              item.type === 'recharge' ? 'Recarga' :
+                item.type === 'purchase' ? 'Compra' :
+                  item.type;
+
+            return (
+              <View key={item.id} style={styles.transactionContainer}>
+                <LinearGradient
+                  colors={isPositive ? ['#61C9A8', '#4FB896'] : ['#ED9B40', '#E8872E']}
+                  style={styles.transactionIcon}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons
+                    name={isPositive ? "arrow-down" : "arrow-up"}
+                    size={22}
+                    color="#fff"
+                  />
+                </LinearGradient>
+                <View style={styles.transactionDetails}>
+                  <Text style={styles.transactionType}>{transactionTypeText}</Text>
+                  <View style={styles.transactionDateRow}>
+                    <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
+                    <Text style={styles.transactionDate}>
+                      {new Date(item.createdAt).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={[styles.transactionAmount, isPositive ? styles.amountPositive : styles.amountNegative]}>
+                  {isPositive ? '+' : ''}{item.amount.toFixed(2)} Bs.S
+                </Text>
+              </View>
+            );
+          })
+        )}
+      </View>
+    </ScrollView >
   );
 };
 
@@ -193,37 +210,65 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 30,
+  },
+  header: {
+    paddingTop: 60,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    marginBottom: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: colors.white,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 4,
+  },
   card: {
-    borderRadius: 30,
-    padding: 28,
-    margin: 20,
-    marginBottom: 16,
-    shadowColor: '#B8956A',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 12,
+    borderRadius: 24,
+    padding: 20,
+    marginHorizontal: 24,
+    marginTop: -50, // Overlap header
+    marginBottom: 24,
+    shadowColor: '#ED9B40',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
     overflow: 'hidden',
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 15,
+    width: 42,
+    height: 42,
+    borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
   },
   cardLabel: {
     color: 'rgba(255,255,255,0.9)',
-    fontSize: 16,
+    fontSize: 14,
     flex: 1,
     fontWeight: '600',
     letterSpacing: 0.3,
@@ -252,14 +297,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   balanceContainer: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   balanceText: {
     color: colors.white,
-    fontSize: 52,
+    fontSize: 40,
     fontWeight: 'bold',
-    marginBottom: 12,
-    letterSpacing: 1,
+    marginBottom: 10,
+    letterSpacing: 0.8,
   },
   lowBalanceTag: {
     flexDirection: 'row',
@@ -284,8 +329,8 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
@@ -321,7 +366,7 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     borderRadius: 75,
-    backgroundColor: 'rgba(97, 201, 168, 0.1)',
+    backgroundColor: 'rgba(255, 215, 100, 0.15)',
     top: -50,
     right: -50,
   },
@@ -330,7 +375,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: 'rgba(237, 155, 64, 0.1)',
+    backgroundColor: 'rgba(255, 180, 80, 0.15)',
     bottom: -30,
     left: -30,
   },
@@ -338,8 +383,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 12,
+    paddingHorizontal: 24,
+    marginBottom: 16,
+    marginTop: 8,
   },
   sectionTitle: {
     fontSize: 20,
@@ -361,8 +407,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   listContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
   },
   transactionContainer: {
     flexDirection: 'row',

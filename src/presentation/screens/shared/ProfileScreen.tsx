@@ -1,6 +1,7 @@
 import Button from '@/src/presentation/components/Button';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
@@ -43,7 +44,30 @@ const ProfileScreen = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      <View style={styles.header}>
+      <LinearGradient
+        colors={['#B8956A', '#A67C52', '#B8956A']}
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        {/* Iconos decorativos de fondo */}
+        {/* Iconos decorativos de fondo */}
+        <View style={StyleSheet.absoluteFill}>
+          {user?.role === 'cafeteria' ? (
+            <>
+              <Ionicons name="pizza" size={80} color="rgba(255,255,255,0.1)" style={{ position: 'absolute', right: -20, top: -10 }} />
+              <Ionicons name="fast-food" size={60} color="rgba(255,255,255,0.08)" style={{ position: 'absolute', left: -10, bottom: -10 }} />
+              <Ionicons name="cafe" size={40} color="rgba(255,255,255,0.05)" style={{ position: 'absolute', left: '40%', top: 10 }} />
+            </>
+          ) : (
+            <>
+              <Ionicons name="person" size={80} color="rgba(255,255,255,0.1)" style={{ position: 'absolute', right: -20, top: -10 }} />
+              <Ionicons name="school" size={60} color="rgba(255,255,255,0.08)" style={{ position: 'absolute', left: -10, bottom: -10 }} />
+              <Ionicons name="settings" size={40} color="rgba(255,255,255,0.05)" style={{ position: 'absolute', left: '40%', top: 10 }} />
+            </>
+          )}
+        </View>
+
         <View style={styles.avatarContainer}>
           <Ionicons
             name={user?.role === 'student' ? 'school' : user?.role === 'cafeteria' ? 'restaurant' : 'person'}
@@ -62,7 +86,7 @@ const ProfileScreen = () => {
             {user?.role === 'student' ? 'Estudiante' : user?.role === 'parent' ? 'Representante' : 'Cantina'}
           </Text>
         </View>
-      </View>
+      </LinearGradient>
 
       {user?.role === 'student' && (
         <View style={styles.qrSection}>
@@ -126,6 +150,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     marginBottom: 20,
+    overflow: 'hidden',
   },
   avatarContainer: {
     width: 100,
@@ -252,4 +277,3 @@ const styles = StyleSheet.create({
 });
 
 export default ProfileScreen;
-

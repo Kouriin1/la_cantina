@@ -28,6 +28,10 @@ const ProductsScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
+  // Search and Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'low-stock' | 'out-of-stock'>('all');
+
   // Form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -153,6 +157,16 @@ const ProductsScreen = () => {
     );
   };
 
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter =
+      selectedFilter === 'all' ? true :
+        selectedFilter === 'low-stock' ? product.stock > 0 && product.stock <= 5 :
+          selectedFilter === 'out-of-stock' ? product.stock === 0 : true;
+
+    return matchesSearch && matchesFilter;
+  });
+
   const renderItem = ({ item }: { item: Product }) => (
     <View style={styles.productCard}>
       <Image
@@ -199,8 +213,54 @@ const ProductsScreen = () => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
+        {/* Iconos decorativos de fondo */}
+        <View style={StyleSheet.absoluteFill}>
+          <Ionicons name="pizza" size={80} color="rgba(255,255,255,0.1)" style={{ position: 'absolute', right: -20, top: -10 }} />
+          <Ionicons name="fast-food" size={60} color="rgba(255,255,255,0.08)" style={{ position: 'absolute', left: -10, bottom: -10 }} />
+          <Ionicons name="cafe" size={40} color="rgba(255,255,255,0.05)" style={{ position: 'absolute', left: '40%', top: 10 }} />
+        </View>
+
         <Text style={styles.headerTitle}>Gestión de Productos</Text>
         <Text style={styles.headerSubtitle}>Administra el menú de la cantina</Text>
+
+        {/* Barra de Búsqueda */}
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar producto..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor={colors.textSecondary}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Filtros */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersContainer}>
+          <TouchableOpacity
+            style={[styles.filterChip, selectedFilter === 'all' && styles.filterChipActive]}
+            onPress={() => setSelectedFilter('all')}
+          >
+            <Text style={[styles.filterText, selectedFilter === 'all' && styles.filterTextActive]}>Todos</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, selectedFilter === 'low-stock' && styles.filterChipActive]}
+            onPress={() => setSelectedFilter('low-stock')}
+          >
+            <Text style={[styles.filterText, selectedFilter === 'low-stock' && styles.filterTextActive]}>Bajo Stock</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, selectedFilter === 'out-of-stock' && styles.filterChipActive]}
+            onPress={() => setSelectedFilter('out-of-stock')}
+          >
+            <Text style={[styles.filterText, selectedFilter === 'out-of-stock' && styles.filterTextActive]}>Agotados</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </LinearGradient>
 
       {loading ? (
@@ -209,7 +269,7 @@ const ProductsScreen = () => {
         </View>
       ) : (
         <FlatList
-          data={products}
+          data={filteredProducts}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContainer}
@@ -217,7 +277,7 @@ const ProductsScreen = () => {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="fast-food-outline" size={60} color="#ccc" />
-              <Text style={styles.emptyText}>No hay productos registrados</Text>
+              <Text style={styles.emptyText}>No se encontraron productos</Text>
             </View>
           }
         />
@@ -350,6 +410,48 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255,255,255,0.8)',
     marginTop: 4,
+    marginBottom: 16,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+    marginBottom: 16,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
+  },
+  filtersContainer: {
+    flexDirection: 'row',
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  filterChipActive: {
+    backgroundColor: colors.white,
+    borderColor: colors.white,
+  },
+  filterText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  filterTextActive: {
+    color: colors.primary,
   },
   centered: {
     flex: 1,

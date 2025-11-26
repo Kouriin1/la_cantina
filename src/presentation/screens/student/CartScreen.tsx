@@ -5,12 +5,14 @@ import React, { useState } from 'react';
 import { Alert, FlatList, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAuthStore } from '../../state/authStore';
 import { CartItem, useCartStore } from '../../state/cartStore';
+import { useOrdersStore } from '../../state/ordersStore';
 import { colors } from '../../theme/colors';
 
 const CartScreen = () => {
     const navigation = useNavigation();
     const { user } = useAuthStore();
     const { items, removeItem, updateQuantity, clearCart, getTotal } = useCartStore();
+    const { addOrder } = useOrdersStore();
     const [loading, setLoading] = useState(false);
 
     // Modal states
@@ -38,6 +40,13 @@ const CartScreen = () => {
             const success = true;
 
             if (success) {
+                // Guardar el pedido en el store
+                const orderItems = items.map(item => ({
+                    product: item.product,
+                    quantity: item.quantity
+                }));
+                addOrder(orderItems, getTotal());
+
                 showModal(
                     'success',
                     '¡Pedido Realizado!',
@@ -156,10 +165,14 @@ const CartScreen = () => {
                     <TouchableOpacity
                         style={styles.clearButton}
                         onPress={() =>
-                            Alert.alert('Vaciar carrito', '¿Estás seguro de vaciar el carrito?', [
-                                { text: 'Cancelar', style: 'cancel' },
-                                { text: 'Vaciar', onPress: clearCart, style: 'destructive' },
-                            ])
+                            Alert.alert(
+                                '¿Vaciar tu carrito?',
+                                'Se eliminarán todos los productos seleccionados. ¿Estás seguro de que quieres empezar de nuevo?',
+                                [
+                                    { text: 'No, mantener', style: 'cancel' },
+                                    { text: 'Sí, vaciar', onPress: clearCart, style: 'destructive' },
+                                ]
+                            )
                         }
                         activeOpacity={0.7}
                     >

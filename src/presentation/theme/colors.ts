@@ -1,7 +1,7 @@
 export const colors = {
   // Paleta principal
-  primary: '#B8956A', // Brown/Tan - Color principal cálido
-  secondary: '#ED9B40', // Orange - Acento vibrante
+  primary: '#ED9B40', // Mustard/Orange - Color principal vibrante
+  secondary: '#B8956A', // Brown/Tan - Acento cálido
   accent: '#61C9A8', // Mint Green - Acento fresco
   cream: '#FFFEF9', // Cream - Fondo suave
 
