@@ -123,14 +123,16 @@ const RegisterScreen = () => {
             <Button title="Registrarse" onPress={handleRegister} loading={loading} />
           </View>
 
-          <TouchableOpacity
-            style={styles.linkContainer}
-            onPress={() => (navigation as any).navigate('Login')}
-          >
-            <Text style={styles.linkText}>
-              ¿Ya tienes una cuenta? <Text style={styles.linkHighlight}>Inicia Sesión</Text>
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.loginLinkContainer}>
+            <Text style={styles.loginLinkText}>¿Ya tienes una cuenta?</Text>
+            <TouchableOpacity
+              style={styles.loginButtonOutline}
+              onPress={() => (navigation as any).navigate('Login')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -227,18 +229,31 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     fontSize: 14,
   },
-  linkContainer: {
+  loginLinkContainer: {
     marginTop: 24,
+    width: '100%',
     alignItems: 'center',
+    gap: 16,
     paddingBottom: 20,
   },
-  linkText: {
+  loginLinkText: {
     color: colors.textSecondary,
-    fontSize: 16,
+    fontSize: 15,
   },
-  linkHighlight: {
+  loginButtonOutline: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loginButtonText: {
     color: colors.primary,
     fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 

@@ -1,6 +1,6 @@
-import { Order, OrderItem, OrderStatus } from '../../domain/entities/Order';
-import { toProduct, fromProduct, ProductModel } from './ProductModel';
-import { toUser, fromUser, UserModel } from './UserModel';
+import { Order, OrderStatus } from '../../domain/entities/Order';
+import { fromProduct, ProductModel, toProduct } from './ProductModel';
+import { fromUser, toUser, UserModel } from './UserModel';
 
 export interface OrderItemModel {
   product: ProductModel;
@@ -15,6 +15,7 @@ export interface OrderModel {
   status: OrderStatus;
   createdAt: number; // timestamp
   updatedAt: number; // timestamp
+  rejectionNote?: string;
 }
 
 export const toOrder = (orderModel: OrderModel): Order => ({
@@ -28,6 +29,7 @@ export const toOrder = (orderModel: OrderModel): Order => ({
   status: orderModel.status,
   createdAt: new Date(orderModel.createdAt),
   updatedAt: new Date(orderModel.updatedAt),
+  rejectionNote: orderModel.rejectionNote,
 });
 
 export const fromOrder = (order: Order): OrderModel => ({
@@ -41,4 +43,5 @@ export const fromOrder = (order: Order): OrderModel => ({
   status: order.status,
   createdAt: order.createdAt.getTime(),
   updatedAt: order.updatedAt.getTime(),
+  rejectionNote: order.rejectionNote,
 });

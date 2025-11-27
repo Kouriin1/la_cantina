@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
-import { Alert, FlatList, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAuthStore } from '../../state/authStore';
 import { CartItem, useCartStore } from '../../state/cartStore';
 import { useOrdersStore } from '../../state/ordersStore';
@@ -19,6 +19,9 @@ const CartScreen = () => {
     const [modalVisible, setModalVisible] = useState(false);
     const [modalType, setModalType] = useState<'success' | 'error'>('success');
     const [modalMessage, setModalMessage] = useState({ title: '', body: '' });
+
+    // Clear Cart Confirmation Modal state
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
 
     const showModal = (type: 'success' | 'error', title: string, body: string) => {
         setModalType(type);
@@ -68,6 +71,11 @@ const CartScreen = () => {
             clearCart();
             (navigation as any).goBack();
         }
+    };
+
+    const handleClearCart = () => {
+        clearCart();
+        setConfirmModalVisible(false);
     };
 
     const renderCartItem = ({ item }: { item: CartItem }) => (
@@ -164,16 +172,7 @@ const CartScreen = () => {
                 {items.length > 0 && (
                     <TouchableOpacity
                         style={styles.clearButton}
-                        onPress={() =>
-                            Alert.alert(
-                                '¿Vaciar tu carrito?',
-                                'Se eliminarán todos los productos seleccionados. ¿Estás seguro de que quieres empezar de nuevo?',
-                                [
-                                    { text: 'No, mantener', style: 'cancel' },
-                                    { text: 'Sí, vaciar', onPress: clearCart, style: 'destructive' },
-                                ]
-                            )
-                        }
+                        onPress={() => setConfirmModalVisible(true)}
                         activeOpacity={0.7}
                     >
                         <Ionicons name="trash-outline" size={22} color="#fff" />
@@ -248,7 +247,7 @@ const CartScreen = () => {
                 </>
             )}
 
-            {/* Custom Alert Modal */}
+            {/* Success/Error Modal */}
             <Modal
                 animationType="fade"
                 transparent={true}
@@ -281,6 +280,41 @@ const CartScreen = () => {
                                 {modalType === 'success' ? 'Entendido' : 'Cerrar'}
                             </Text>
                         </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Clear Cart Confirmation Modal */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={confirmModalVisible}
+                onRequestClose={() => setConfirmModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={[styles.modalIconContainer, { backgroundColor: '#FFF0F3' }]}>
+                            <Ionicons name="trash-outline" size={50} color="#FF4757" />
+                        </View>
+                        <Text style={styles.modalTitle}>¿Vaciar carrito?</Text>
+                        <Text style={styles.modalBody}>
+                            Se eliminarán todos los productos seleccionados. ¿Estás seguro?
+                        </Text>
+
+                        <View style={styles.modalActions}>
+                            <TouchableOpacity
+                                style={[styles.modalActionButton, styles.modalCancelButton]}
+                                onPress={() => setConfirmModalVisible(false)}
+                            >
+                                <Text style={styles.modalCancelButtonText}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalActionButton, styles.modalConfirmButton]}
+                                onPress={handleClearCart}
+                            >
+                                <Text style={styles.modalConfirmButtonText}>Sí, vaciar</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -593,6 +627,34 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    modalActions: {
+        flexDirection: 'row',
+        gap: 12,
+        width: '100%',
+    },
+    modalActionButton: {
+        flex: 1,
+        paddingVertical: 14,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalCancelButton: {
+        backgroundColor: '#F5F6FA',
+    },
+    modalConfirmButton: {
+        backgroundColor: '#FF4757',
+    },
+    modalCancelButtonText: {
+        color: colors.textSecondary,
+        fontWeight: '600',
+        fontSize: 15,
+    },
+    modalConfirmButtonText: {
+        color: '#fff',
+        fontWeight: '600',
+        fontSize: 15,
     },
 });
 

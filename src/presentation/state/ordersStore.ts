@@ -11,13 +11,14 @@ export interface Order {
     date: string;
     items: OrderItem[];
     total: number;
-    status: 'pending' | 'approved' | 'rejected';
+    status: 'pending' | 'approved' | 'rejected' | 'rejected_by_parent' | 'pending_approval' | 'pending_payment';
+    rejectionNote?: string;
 }
 
 interface OrdersState {
     orders: Order[];
     addOrder: (items: OrderItem[], total: number) => void;
-    updateOrderStatus: (orderId: string, status: 'pending' | 'approved' | 'rejected') => void;
+    updateOrderStatus: (orderId: string, status: Order['status']) => void;
 }
 
 export const useOrdersStore = create<OrdersState>((set) => ({

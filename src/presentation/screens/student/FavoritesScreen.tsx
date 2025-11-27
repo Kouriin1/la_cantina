@@ -16,6 +16,7 @@ const FavoritesScreen = () => {
                 <Image
                     source={{ uri: item.imageUrl || 'https://via.placeholder.com/150' }}
                     style={styles.productImage}
+                    resizeMode="cover"
                 />
 
                 <View style={styles.productInfo}>

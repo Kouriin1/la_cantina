@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { TokenRepositoryImpl } from '../../../data/repositories/TokenRepositoryImpl';
 import { TokenTransaction } from '../../../domain/entities/TokenTransaction';
 import { GetTransactionsByUserUseCase } from '../../../domain/usecases/GetTransactionsByUserUseCase';
@@ -13,6 +13,8 @@ const WalletScreen = () => {
   const [transactions, setTransactions] = useState<TokenTransaction[]>([]);
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'recharge' | 'purchase'>('all');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -20,10 +22,14 @@ const WalletScreen = () => {
       try {
         const tokenRepository = new TokenRepositoryImpl();
         const getTransactionsUseCase = new GetTransactionsByUserUseCase(tokenRepository);
-        const transactionsResult = await getTransactionsUseCase.execute(user.id);
-        setTransactions(transactionsResult);
 
-        const balanceResult = await tokenRepository.getTokenBalance(user.id);
+        // Optimize: Fetch data in parallel
+        const [transactionsResult, balanceResult] = await Promise.all([
+          getTransactionsUseCase.execute(user.id),
+          tokenRepository.getTokenBalance(user.id)
+        ]);
+
+        setTransactions(transactionsResult);
         setBalance(balanceResult);
       } catch (error) {
         console.error(error);
@@ -34,10 +40,31 @@ const WalletScreen = () => {
     fetchData();
   }, [user]);
 
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(item => {
+      // Filter by type
+      if (activeFilter !== 'all' && item.type !== activeFilter) return false;
+
+      // Filter by search query (amount or date or type)
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const dateStr = new Date(item.createdAt).toLocaleDateString('es-ES', {
+          day: '2-digit', month: 'short', year: 'numeric'
+        }).toLowerCase();
+        const amountStr = item.amount.toString();
+        const typeStr = (item.type === 'recharge' ? 'recarga' : item.type === 'purchase' ? 'compra' : item.type).toLowerCase();
+
+        return dateStr.includes(query) || amountStr.includes(query) || typeStr.includes(query);
+      }
+
+      return true;
+    });
+  }, [transactions, activeFilter, searchQuery]);
+
   if (loading) {
     return (
       <View style={styles.centered}>
-        <Ionicons name="wallet" size={60} color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>Cargando billetera...</Text>
       </View>
     );
@@ -127,27 +154,64 @@ const WalletScreen = () => {
         <View style={styles.decorativeCircle2} />
       </LinearGradient>
 
+      {/* Search and Filters */}
+      <View style={styles.searchSection}>
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar transacciones..."
+            placeholderTextColor={colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersContainer} contentContainerStyle={styles.filtersContent}>
+          <TouchableOpacity
+            style={[styles.filterChip, activeFilter === 'all' && styles.filterChipActive]}
+            onPress={() => setActiveFilter('all')}
+          >
+            <Text style={[styles.filterText, activeFilter === 'all' && styles.filterTextActive]}>Todas</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, activeFilter === 'purchase' && styles.filterChipActive]}
+            onPress={() => setActiveFilter('purchase')}
+          >
+            <Text style={[styles.filterText, activeFilter === 'purchase' && styles.filterTextActive]}>Compras</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, activeFilter === 'recharge' && styles.filterChipActive]}
+            onPress={() => setActiveFilter('recharge')}
+          >
+            <Text style={[styles.filterText, activeFilter === 'recharge' && styles.filterTextActive]}>Recargas</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+
       {/* Transaction History */}
       <View style={styles.historyHeader}>
         <Text style={styles.sectionTitle}>
-          <Ionicons name="time-outline" size={22} color={colors.text} /> Historial de Transacciones
+          <Ionicons name="time-outline" size={22} color={colors.text} /> Historial
         </Text>
-        <TouchableOpacity style={styles.filterButton}>
-          <Ionicons name="filter" size={18} color={colors.primary} />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.listContainer}>
-        {transactions.length === 0 ? (
+        {filteredTransactions.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIconContainer}>
-              <Ionicons name="receipt-outline" size={60} color="#DFE6E9" />
+              <Ionicons name="search-outline" size={60} color="#DFE6E9" />
             </View>
-            <Text style={styles.emptyTitle}>No hay transacciones</Text>
-            <Text style={styles.emptyText}>Tus transacciones aparecerán aquí</Text>
+            <Text style={styles.emptyTitle}>No se encontraron resultados</Text>
+            <Text style={styles.emptyText}>Intenta con otra búsqueda o filtro</Text>
           </View>
         ) : (
-          transactions.map((item) => {
+          filteredTransactions.map((item) => {
             const isPositive = item.amount > 0;
             const transactionTypeText =
               item.type === 'recharge' ? 'Recarga' :
@@ -379,32 +443,73 @@ const styles = StyleSheet.create({
     bottom: -30,
     left: -30,
   },
+  searchSection: {
+    paddingHorizontal: 24,
+    marginBottom: 20,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 50,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.text,
+  },
+  filtersContainer: {
+    flexDirection: 'row',
+  },
+  filtersContent: {
+    paddingRight: 24,
+    gap: 10,
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  filterChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  filterTextActive: {
+    color: colors.white,
+  },
   historyHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
     marginBottom: 16,
-    marginTop: 8,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: colors.text,
     letterSpacing: 0.3,
-  },
-  filterButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
   listContainer: {
     paddingHorizontal: 24,
