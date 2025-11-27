@@ -1,8 +1,8 @@
-import { OrderRepository } from '../../domain/repositories/OrderRepository';
 import { Order } from '../../domain/entities/Order';
-import mockApi from '../services/ApiService';
+import { OrderRepository } from '../../domain/repositories/OrderRepository';
 import { OrderModel, toOrder } from '../models/OrderModel';
 import { UserModel } from '../models/UserModel';
+import mockApi from '../services/ApiService';
 
 const mockStudent: UserModel = {
   id: 'student1',
@@ -49,6 +49,31 @@ export class OrderRepositoryImpl implements OrderRepository {
   }
 
   async updateOrderStatus(orderId: string, status: Order['status']): Promise<Order> {
-    throw new Error('Method not implemented.');
+    // Mock implementation - in production this would update the database
+    const orderIndex = mockOrders.findIndex(o => o.id === orderId);
+    if (orderIndex !== -1) {
+      mockOrders[orderIndex] = {
+        ...mockOrders[orderIndex],
+        status: status as any,
+        updatedAt: new Date().getTime(),
+      };
+      return toOrder(mockOrders[orderIndex]);
+    }
+    throw new Error('Order not found');
+  }
+
+  async updateOrderWithRejection(orderId: string, rejectionNote: string): Promise<Order> {
+    // Mock implementation - in production this would update the database
+    const orderIndex = mockOrders.findIndex(o => o.id === orderId);
+    if (orderIndex !== -1) {
+      mockOrders[orderIndex] = {
+        ...mockOrders[orderIndex],
+        status: 'rejected_by_parent' as any,
+        rejectionNote,
+        updatedAt: new Date().getTime(),
+      };
+      return toOrder(mockOrders[orderIndex]);
+    }
+    throw new Error('Order not found');
   }
 }

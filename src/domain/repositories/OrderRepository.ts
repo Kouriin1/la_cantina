@@ -6,4 +6,5 @@ export interface OrderRepository {
   getOrderById(id: string): Promise<Order | null>;
   createOrder(order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>): Promise<Order>;
   updateOrderStatus(orderId: string, status: Order['status']): Promise<Order>;
+  updateOrderWithRejection(orderId: string, rejectionNote: string): Promise<Order>;
 }

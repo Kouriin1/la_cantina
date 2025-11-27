@@ -150,6 +150,12 @@ const AdminPanelScreen = () => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
+        {/* Iconos decorativos de fondo */}
+        <View style={StyleSheet.absoluteFill}>
+          <Ionicons name="pizza" size={80} color="rgba(255,255,255,0.1)" style={{ position: 'absolute', right: -20, top: -10 }} />
+          <Ionicons name="fast-food" size={60} color="rgba(255,255,255,0.08)" style={{ position: 'absolute', left: -10, bottom: -10 }} />
+          <Ionicons name="cafe" size={40} color="rgba(255,255,255,0.05)" style={{ position: 'absolute', left: '40%', top: 10 }} />
+        </View>
         <View style={styles.headerContent}>
           <View>
             <Text style={styles.headerTitle}>Pedidos</Text>

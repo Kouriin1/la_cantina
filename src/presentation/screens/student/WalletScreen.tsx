@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { TokenRepositoryImpl } from '../../../data/repositories/TokenRepositoryImpl';
 import { TokenTransaction } from '../../../domain/entities/TokenTransaction';
 import { GetTransactionsByUserUseCase } from '../../../domain/usecases/GetTransactionsByUserUseCase';
@@ -13,6 +13,8 @@ const WalletScreen = () => {
   const [transactions, setTransactions] = useState<TokenTransaction[]>([]);
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'recharge' | 'purchase'>('all');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -20,10 +22,14 @@ const WalletScreen = () => {
       try {
         const tokenRepository = new TokenRepositoryImpl();
         const getTransactionsUseCase = new GetTransactionsByUserUseCase(tokenRepository);
-        const transactionsResult = await getTransactionsUseCase.execute(user.id);
-        setTransactions(transactionsResult);
 
-        const balanceResult = await tokenRepository.getTokenBalance(user.id);
+        // Optimize: Fetch data in parallel
+        const [transactionsResult, balanceResult] = await Promise.all([
+          getTransactionsUseCase.execute(user.id),
+          tokenRepository.getTokenBalance(user.id)
+        ]);
+
+        setTransactions(transactionsResult);
         setBalance(balanceResult);
       } catch (error) {
         console.error(error);
@@ -34,61 +40,63 @@ const WalletScreen = () => {
     fetchData();
   }, [user]);
 
-  const renderItem = ({ item }: { item: TokenTransaction }) => {
-    const isPositive = item.amount > 0;
-    const transactionTypeText =
-      item.type === 'recharge' ? 'Recarga' :
-        item.type === 'purchase' ? 'Compra' :
-          item.type;
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(item => {
+      // Filter by type
+      if (activeFilter !== 'all' && item.type !== activeFilter) return false;
 
-    return (
-      <View style={styles.transactionContainer}>
-        <LinearGradient
-          colors={isPositive ? ['#61C9A8', '#4FB896'] : ['#ED9B40', '#E8872E']}
-          style={styles.transactionIcon}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Ionicons
-            name={isPositive ? "arrow-down" : "arrow-up"}
-            size={22}
-            color="#fff"
-          />
-        </LinearGradient>
-        <View style={styles.transactionDetails}>
-          <Text style={styles.transactionType}>{transactionTypeText}</Text>
-          <View style={styles.transactionDateRow}>
-            <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
-            <Text style={styles.transactionDate}>
-              {new Date(item.createdAt).toLocaleDateString('es-ES', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric'
-              })}
-            </Text>
-          </View>
-        </View>
-        <Text style={[styles.transactionAmount, isPositive ? styles.amountPositive : styles.amountNegative]}>
-          {isPositive ? '+' : ''}{item.amount.toFixed(2)} Bs.S
-        </Text>
-      </View>
-    );
-  };
+      // Filter by search query (amount or date or type)
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const dateStr = new Date(item.createdAt).toLocaleDateString('es-ES', {
+          day: '2-digit', month: 'short', year: 'numeric'
+        }).toLowerCase();
+        const amountStr = item.amount.toString();
+        const typeStr = (item.type === 'recharge' ? 'recarga' : item.type === 'purchase' ? 'compra' : item.type).toLowerCase();
+
+        return dateStr.includes(query) || amountStr.includes(query) || typeStr.includes(query);
+      }
+
+      return true;
+    });
+  }, [transactions, activeFilter, searchQuery]);
 
   if (loading) {
     return (
       <View style={styles.centered}>
-        <Ionicons name="wallet" size={60} color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>Cargando billetera...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {/* Balance Card con gradiente premium */}
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+      bounces={true}
+    >
+      {/* Header con gradiente */}
       <LinearGradient
         colors={['#B8956A', '#A67C52', '#B8956A']}
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        {/* Iconos decorativos de fondo */}
+        <View style={StyleSheet.absoluteFill}>
+          <Ionicons name="wallet" size={80} color="rgba(255,255,255,0.1)" style={{ position: 'absolute', right: -20, top: -10 }} />
+          <Ionicons name="cash" size={60} color="rgba(255,255,255,0.08)" style={{ position: 'absolute', left: -10, bottom: -10 }} />
+          <Ionicons name="card" size={40} color="rgba(255,255,255,0.05)" style={{ position: 'absolute', left: '40%', top: 10 }} />
+        </View>
+        <Text style={styles.headerTitle}>Billetera</Text>
+        <Text style={styles.headerSubtitle}>Gestiona tu saldo</Text>
+      </LinearGradient>
+
+      {/* Balance Card con gradiente premium */}
+      <LinearGradient
+        colors={['#ED9B40', '#E8872E', '#ED9B40']}
         style={styles.card}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -146,33 +154,106 @@ const WalletScreen = () => {
         <View style={styles.decorativeCircle2} />
       </LinearGradient>
 
+      {/* Search and Filters */}
+      <View style={styles.searchSection}>
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar transacciones..."
+            placeholderTextColor={colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersContainer} contentContainerStyle={styles.filtersContent}>
+          <TouchableOpacity
+            style={[styles.filterChip, activeFilter === 'all' && styles.filterChipActive]}
+            onPress={() => setActiveFilter('all')}
+          >
+            <Text style={[styles.filterText, activeFilter === 'all' && styles.filterTextActive]}>Todas</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, activeFilter === 'purchase' && styles.filterChipActive]}
+            onPress={() => setActiveFilter('purchase')}
+          >
+            <Text style={[styles.filterText, activeFilter === 'purchase' && styles.filterTextActive]}>Compras</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, activeFilter === 'recharge' && styles.filterChipActive]}
+            onPress={() => setActiveFilter('recharge')}
+          >
+            <Text style={[styles.filterText, activeFilter === 'recharge' && styles.filterTextActive]}>Recargas</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+
       {/* Transaction History */}
       <View style={styles.historyHeader}>
         <Text style={styles.sectionTitle}>
-          <Ionicons name="time-outline" size={22} color={colors.text} /> Historial de Transacciones
+          <Ionicons name="time-outline" size={22} color={colors.text} /> Historial
         </Text>
-        <TouchableOpacity style={styles.filterButton}>
-          <Ionicons name="filter" size={18} color={colors.primary} />
-        </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={transactions}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
+      <View style={styles.listContainer}>
+        {filteredTransactions.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIconContainer}>
-              <Ionicons name="receipt-outline" size={60} color="#DFE6E9" />
+              <Ionicons name="search-outline" size={60} color="#DFE6E9" />
             </View>
-            <Text style={styles.emptyTitle}>No hay transacciones</Text>
-            <Text style={styles.emptyText}>Tus transacciones aparecerán aquí</Text>
+            <Text style={styles.emptyTitle}>No se encontraron resultados</Text>
+            <Text style={styles.emptyText}>Intenta con otra búsqueda o filtro</Text>
           </View>
-        }
-      />
-    </View>
+        ) : (
+          filteredTransactions.map((item) => {
+            const isPositive = item.amount > 0;
+            const transactionTypeText =
+              item.type === 'recharge' ? 'Recarga' :
+                item.type === 'purchase' ? 'Compra' :
+                  item.type;
+
+            return (
+              <View key={item.id} style={styles.transactionContainer}>
+                <LinearGradient
+                  colors={isPositive ? ['#61C9A8', '#4FB896'] : ['#ED9B40', '#E8872E']}
+                  style={styles.transactionIcon}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons
+                    name={isPositive ? "arrow-down" : "arrow-up"}
+                    size={22}
+                    color="#fff"
+                  />
+                </LinearGradient>
+                <View style={styles.transactionDetails}>
+                  <Text style={styles.transactionType}>{transactionTypeText}</Text>
+                  <View style={styles.transactionDateRow}>
+                    <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
+                    <Text style={styles.transactionDate}>
+                      {new Date(item.createdAt).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={[styles.transactionAmount, isPositive ? styles.amountPositive : styles.amountNegative]}>
+                  {isPositive ? '+' : ''}{item.amount.toFixed(2)} Bs.S
+                </Text>
+              </View>
+            );
+          })
+        )}
+      </View>
+    </ScrollView >
   );
 };
 
@@ -193,37 +274,65 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 30,
+  },
+  header: {
+    paddingTop: 60,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    marginBottom: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: colors.white,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 4,
+  },
   card: {
-    borderRadius: 30,
-    padding: 28,
-    margin: 20,
-    marginBottom: 16,
-    shadowColor: '#B8956A',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 12,
+    borderRadius: 24,
+    padding: 20,
+    marginHorizontal: 24,
+    marginTop: -50, // Overlap header
+    marginBottom: 24,
+    shadowColor: '#ED9B40',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
     overflow: 'hidden',
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 15,
+    width: 42,
+    height: 42,
+    borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
   },
   cardLabel: {
     color: 'rgba(255,255,255,0.9)',
-    fontSize: 16,
+    fontSize: 14,
     flex: 1,
     fontWeight: '600',
     letterSpacing: 0.3,
@@ -252,14 +361,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   balanceContainer: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   balanceText: {
     color: colors.white,
-    fontSize: 52,
+    fontSize: 40,
     fontWeight: 'bold',
-    marginBottom: 12,
-    letterSpacing: 1,
+    marginBottom: 10,
+    letterSpacing: 0.8,
   },
   lowBalanceTag: {
     flexDirection: 'row',
@@ -284,8 +393,8 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
@@ -321,7 +430,7 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     borderRadius: 75,
-    backgroundColor: 'rgba(97, 201, 168, 0.1)',
+    backgroundColor: 'rgba(255, 215, 100, 0.15)',
     top: -50,
     right: -50,
   },
@@ -330,16 +439,71 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: 'rgba(237, 155, 64, 0.1)',
+    backgroundColor: 'rgba(255, 180, 80, 0.15)',
     bottom: -30,
     left: -30,
+  },
+  searchSection: {
+    paddingHorizontal: 24,
+    marginBottom: 20,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 50,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.text,
+  },
+  filtersContainer: {
+    flexDirection: 'row',
+  },
+  filtersContent: {
+    paddingRight: 24,
+    gap: 10,
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  filterChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  filterTextActive: {
+    color: colors.white,
   },
   historyHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 12,
+    paddingHorizontal: 24,
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 20,
@@ -347,22 +511,9 @@ const styles = StyleSheet.create({
     color: colors.text,
     letterSpacing: 0.3,
   },
-  filterButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
   listContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
   },
   transactionContainer: {
     flexDirection: 'row',
