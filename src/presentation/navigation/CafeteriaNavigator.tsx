@@ -1,6 +1,6 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React from 'react';
 import AdminPanelScreen from '../screens/cafeteria/AdminPanelScreen';
 import ProductsScreen from '../screens/cafeteria/ProductsScreen';
 import ProfileScreen from '../screens/shared/ProfileScreen';
@@ -36,18 +36,18 @@ const CafeteriaNavigator = () => {
           } else if (route.name === 'Products') {
             iconName = focused ? 'cube' : 'cube-outline';
           } else if (route.name === 'ProfileStack') {
-            iconName = focused ? 'person-circle' : 'person-circle-outline';
+            iconName = focused ? 'restaurant' : 'restaurant-outline';
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return <Ionicons name={iconName as any} size={size} color={color} />;
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: 'gray',
       })}
     >
-      <Tab.Screen name="Orders" component={AdminPanelScreen} />
-      <Tab.Screen name="Products" component={ProductsScreen} />
-      <Tab.Screen name="ProfileStack" component={ProfileStackNavigator} options={{ title: 'Profile' }}/>
+      <Tab.Screen name="Orders" component={AdminPanelScreen} options={{ title: 'Pedidos' }} />
+      <Tab.Screen name="Products" component={ProductsScreen} options={{ title: 'Productos' }} />
+      <Tab.Screen name="ProfileStack" component={ProfileStackNavigator} options={{ title: 'Cantina' }} />
     </Tab.Navigator>
   );
 };

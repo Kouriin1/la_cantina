@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import Input from '../../components/Input';
-import Button from '../../components/Button';
-import { useAuthStore } from '../../state/authStore';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AuthRepositoryImpl } from '../../../data/repositories/AuthRepositoryImpl';
-import { RegisterUseCase } from '../../../domain/usecases/RegisterUseCase';
 import { UserRole } from '../../../domain/entities/User';
-import { Picker } from '@react-native-picker/picker';
+import { RegisterUseCase } from '../../../domain/usecases/RegisterUseCase';
+import Button from '../../components/Button';
+import Input from '../../components/Input';
+import { useAuthStore } from '../../state/authStore';
 import { colors } from '../../theme/colors';
 
 const RegisterScreen = () => {
@@ -36,56 +36,105 @@ const RegisterScreen = () => {
       });
       login(user);
     } catch (e) {
-      setError('Failed to register. Please try again.');
+      setError('Error al registrarse. Por favor intenta de nuevo.');
     } finally {
       setLoading(false);
     }
   };
 
+  const RoleOption = ({ value, label, icon }: { value: UserRole; label: string; icon: string }) => {
+    const isSelected = role === value;
+    return (
+      <TouchableOpacity
+        style={[styles.roleOption, isSelected && styles.roleOptionSelected]}
+        onPress={() => setRole(value)}
+        activeOpacity={0.8}
+      >
+        <View style={[styles.iconContainer, isSelected && styles.iconContainerSelected]}>
+          <Ionicons
+            name={icon as any}
+            size={24}
+            color={isSelected ? colors.white : colors.textSecondary}
+          />
+        </View>
+        <Text style={[styles.roleLabel, isSelected && styles.roleLabelSelected]}>{label}</Text>
+        {isSelected && (
+          <View style={styles.checkIcon}>
+            <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
-      <Input
-        label="First Name"
-        value={firstName}
-        onChangeText={setFirstName}
-        placeholder="Enter your first name"
-      />
-      <Input
-        label="Last Name"
-        value={lastName}
-        onChangeText={setLastName}
-        placeholder="Enter your last name"
-      />
-      <Input
-        label="Email"
-        value={email}
-        onChangeText={setEmail}
-        placeholder="Enter your email"
-      />
-      <Input
-        label="Password"
-        value={password}
-        onChangeText={setPassword}
-        placeholder="Enter your password"
-        secureTextEntry
-      />
-      <View style={styles.pickerContainer}>
-        <Text style={styles.label}>Role</Text>
-        <Picker
-          selectedValue={role}
-          onValueChange={(itemValue) => setRole(itemValue)}
-        >
-          <Picker.Item label="Student" value="student" />
-          <Picker.Item label="Parent" value="parent" />
-          <Picker.Item label="Cafeteria" value="cafeteria" />
-        </Picker>
-      </View>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-      <Button title="Register" onPress={handleRegister} loading={loading} />
-      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.link}>Already have an account? Login</Text>
-      </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.title}>Crear Cuenta</Text>
+          <Text style={styles.subtitle}>Únete a CantiApp hoy</Text>
+        </View>
+
+        <View style={styles.formContainer}>
+          <Input
+            label="Nombre"
+            value={firstName}
+            onChangeText={setFirstName}
+            placeholder="Ingresa tu nombre"
+            icon="person-outline"
+          />
+          <Input
+            label="Apellido"
+            value={lastName}
+            onChangeText={setLastName}
+            placeholder="Ingresa tu apellido"
+            icon="person-outline"
+          />
+          <Input
+            label="Correo Electrónico"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Ingresa tu correo"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            icon="mail-outline"
+          />
+          <Input
+            label="Contraseña"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Ingresa tu contraseña"
+            secureTextEntry
+            icon="lock-closed-outline"
+          />
+
+          <View style={styles.roleContainer}>
+            <Text style={styles.label}>Selecciona tu Rol</Text>
+            <View style={styles.rolesGrid}>
+              <RoleOption value="student" label="Estudiante" icon="school-outline" />
+              <RoleOption value="parent" label="Representante" icon="people-outline" />
+              <RoleOption value="cafeteria" label="Cantina" icon="restaurant-outline" />
+            </View>
+          </View>
+
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          <View style={styles.buttonContainer}>
+            <Button title="Registrarse" onPress={handleRegister} loading={loading} />
+          </View>
+
+          <View style={styles.loginLinkContainer}>
+            <Text style={styles.loginLinkText}>¿Ya tienes una cuenta?</Text>
+            <TouchableOpacity
+              style={styles.loginButtonOutline}
+              onPress={() => (navigation as any).navigate('Login')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -93,33 +142,118 @@ const RegisterScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
-    padding: 20,
-    backgroundColor: colors.white,
+    padding: 24,
+    paddingTop: 60,
+  },
+  headerContainer: {
+    marginBottom: 32,
+    alignItems: 'center',
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 40,
+    color: colors.text,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
+  formContainer: {
+    width: '100%',
+  },
+  roleContainer: {
+    marginBottom: 24,
+    marginTop: 8,
+  },
+  label: {
+    fontSize: 14,
+    marginBottom: 12,
+    color: colors.textSecondary,
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  rolesGrid: {
+    gap: 12,
+  },
+  roleOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    padding: 16,
+    height: 72,
+  },
+  roleOptionSelected: {
+    borderColor: colors.primary,
+    backgroundColor: '#FFF8F0', // Light orange tint
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F0F2F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  iconContainerSelected: {
+    backgroundColor: colors.primary,
+  },
+  roleLabel: {
+    fontSize: 16,
+    color: colors.text,
+    fontWeight: '500',
+    flex: 1,
+  },
+  roleLabelSelected: {
     color: colors.primary,
+    fontWeight: 'bold',
+  },
+  checkIcon: {
+    marginLeft: 8,
+  },
+  buttonContainer: {
+    marginTop: 10,
   },
   errorText: {
     color: colors.danger,
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 16,
+    fontSize: 14,
   },
-  link: {
+  loginLinkContainer: {
+    marginTop: 24,
+    width: '100%',
+    alignItems: 'center',
+    gap: 16,
+    paddingBottom: 20,
+  },
+  loginLinkText: {
+    color: colors.textSecondary,
+    fontSize: 15,
+  },
+  loginButtonOutline: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loginButtonText: {
     color: colors.primary,
-    textAlign: 'center',
-    marginTop: 20,
-  },
-  pickerContainer: {
-    marginVertical: 10,
-  },
-  label: {
+    fontWeight: 'bold',
     fontSize: 16,
-    marginBottom: 5,
   },
 });
 

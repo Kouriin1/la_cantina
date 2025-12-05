@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
-import { TokenTransaction } from '../../../domain/entities/TokenTransaction';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { TokenRepositoryImpl } from '../../../data/repositories/TokenRepositoryImpl';
+import { TokenTransaction } from '../../../domain/entities/TokenTransaction';
 import { GetTransactionsByUserUseCase } from '../../../domain/usecases/GetTransactionsByUserUseCase';
 import { useAuthStore } from '../../state/authStore';
 import { colors } from '../../theme/colors';
@@ -11,6 +13,8 @@ const WalletScreen = () => {
   const [transactions, setTransactions] = useState<TokenTransaction[]>([]);
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'recharge' | 'purchase'>('all');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -18,10 +22,14 @@ const WalletScreen = () => {
       try {
         const tokenRepository = new TokenRepositoryImpl();
         const getTransactionsUseCase = new GetTransactionsByUserUseCase(tokenRepository);
-        const transactionsResult = await getTransactionsUseCase.execute(user.id);
-        setTransactions(transactionsResult);
 
-        const balanceResult = await tokenRepository.getTokenBalance(user.id);
+        // Optimize: Fetch data in parallel
+        const [transactionsResult, balanceResult] = await Promise.all([
+          getTransactionsUseCase.execute(user.id),
+          tokenRepository.getTokenBalance(user.id)
+        ]);
+
+        setTransactions(transactionsResult);
         setBalance(balanceResult);
       } catch (error) {
         console.error(error);
@@ -32,86 +40,557 @@ const WalletScreen = () => {
     fetchData();
   }, [user]);
 
-  const renderItem = ({ item }: { item: TokenTransaction }) => (
-    <View style={styles.transactionContainer}>
-      <Text style={styles.transactionType}>{item.type}</Text>
-      <Text style={item.amount > 0 ? styles.amountPositive : styles.amountNegative}>
-        {item.amount > 0 ? '+' : ''}{item.amount.toFixed(2)}
-      </Text>
-    </View>
-  );
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(item => {
+      // Filter by type
+      if (activeFilter !== 'all' && item.type !== activeFilter) return false;
+
+      // Filter by search query (amount or date or type)
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const dateStr = new Date(item.createdAt).toLocaleDateString('es-ES', {
+          day: '2-digit', month: 'short', year: 'numeric'
+        }).toLowerCase();
+        const amountStr = item.amount.toString();
+        const typeStr = (item.type === 'recharge' ? 'recarga' : item.type === 'purchase' ? 'compra' : item.type).toLowerCase();
+
+        return dateStr.includes(query) || amountStr.includes(query) || typeStr.includes(query);
+      }
+
+      return true;
+    });
+  }, [transactions, activeFilter, searchQuery]);
 
   if (loading) {
     return (
       <View style={styles.centered}>
-        <Text>Loading...</Text>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Cargando billetera...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.balanceContainer}>
-        <Text style={styles.balanceLabel}>Current Balance:</Text>
-        <Text style={styles.balanceAmount}>{balance.toFixed(2)} Tokens</Text>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+      bounces={true}
+    >
+      {/* Header con gradiente */}
+      <LinearGradient
+        colors={['#B8956A', '#A67C52', '#B8956A']}
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        {/* Iconos decorativos de fondo */}
+        <View style={StyleSheet.absoluteFill}>
+          <Ionicons name="wallet" size={80} color="rgba(255,255,255,0.1)" style={{ position: 'absolute', right: -20, top: -10 }} />
+          <Ionicons name="cash" size={60} color="rgba(255,255,255,0.08)" style={{ position: 'absolute', left: -10, bottom: -10 }} />
+          <Ionicons name="card" size={40} color="rgba(255,255,255,0.05)" style={{ position: 'absolute', left: '40%', top: 10 }} />
+        </View>
+        <Text style={styles.headerTitle}>Billetera</Text>
+        <Text style={styles.headerSubtitle}>Gestiona tu saldo</Text>
+      </LinearGradient>
+
+      {/* Balance Card con gradiente premium */}
+      <LinearGradient
+        colors={['#ED9B40', '#E8872E', '#ED9B40']}
+        style={styles.card}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View style={styles.cardHeader}>
+          <View style={styles.iconContainer}>
+            <Ionicons name="wallet" size={28} color="#fff" />
+          </View>
+          <Text style={styles.cardLabel}>Saldo Disponible</Text>
+          <TouchableOpacity style={styles.rechargeButton} activeOpacity={0.8}>
+            <LinearGradient
+              colors={['#61C9A8', '#4FB896']}
+              style={styles.rechargeButtonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Ionicons name="flash" size={18} color="#fff" />
+              <Text style={styles.rechargeText}>Recargar</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.balanceContainer}>
+          <Text style={styles.balanceText}>Bs.S {balance.toFixed(2)}</Text>
+          {balance < 10 && (
+            <View style={styles.lowBalanceTag}>
+              <Ionicons name="alert-circle" size={14} color="#fff" />
+              <Text style={styles.lowBalanceText}>Saldo Bajo</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Progress bar mejorado */}
+        <View style={styles.progressContainer}>
+          <View style={styles.progressHeader}>
+            <Text style={styles.progressLabel}>
+              <Ionicons name="trending-up" size={14} color="rgba(255,255,255,0.8)" /> Nivel de saldo
+            </Text>
+            <Text style={styles.progressValue}>
+              {Math.min(Math.max((balance / 100) * 100, 0), 100).toFixed(0)}%
+            </Text>
+          </View>
+          <View style={styles.progressBarBackground}>
+            <LinearGradient
+              colors={['#61C9A8', '#4FB896']}
+              style={[styles.progressBarFill, { width: `${Math.min(Math.max((balance / 100) * 100, 0), 100)}%` }]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            />
+          </View>
+        </View>
+
+        {/* Decorative elements */}
+        <View style={styles.decorativeCircle1} />
+        <View style={styles.decorativeCircle2} />
+      </LinearGradient>
+
+      {/* Search and Filters */}
+      <View style={styles.searchSection}>
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar transacciones..."
+            placeholderTextColor={colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersContainer} contentContainerStyle={styles.filtersContent}>
+          <TouchableOpacity
+            style={[styles.filterChip, activeFilter === 'all' && styles.filterChipActive]}
+            onPress={() => setActiveFilter('all')}
+          >
+            <Text style={[styles.filterText, activeFilter === 'all' && styles.filterTextActive]}>Todas</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, activeFilter === 'purchase' && styles.filterChipActive]}
+            onPress={() => setActiveFilter('purchase')}
+          >
+            <Text style={[styles.filterText, activeFilter === 'purchase' && styles.filterTextActive]}>Compras</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, activeFilter === 'recharge' && styles.filterChipActive]}
+            onPress={() => setActiveFilter('recharge')}
+          >
+            <Text style={[styles.filterText, activeFilter === 'recharge' && styles.filterTextActive]}>Recargas</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
-      <Text style={styles.title}>Transaction History</Text>
-      <FlatList
-        data={transactions}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text>No transactions yet.</Text>}
-      />
-    </View>
+
+      {/* Transaction History */}
+      <View style={styles.historyHeader}>
+        <Text style={styles.sectionTitle}>
+          <Ionicons name="time-outline" size={22} color={colors.text} /> Historial
+        </Text>
+      </View>
+
+      <View style={styles.listContainer}>
+        {filteredTransactions.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconContainer}>
+              <Ionicons name="search-outline" size={60} color="#DFE6E9" />
+            </View>
+            <Text style={styles.emptyTitle}>No se encontraron resultados</Text>
+            <Text style={styles.emptyText}>Intenta con otra búsqueda o filtro</Text>
+          </View>
+        ) : (
+          filteredTransactions.map((item) => {
+            const isPositive = item.amount > 0;
+            const transactionTypeText =
+              item.type === 'recharge' ? 'Recarga' :
+                item.type === 'purchase' ? 'Compra' :
+                  item.type;
+
+            return (
+              <View key={item.id} style={styles.transactionContainer}>
+                <LinearGradient
+                  colors={isPositive ? ['#61C9A8', '#4FB896'] : ['#ED9B40', '#E8872E']}
+                  style={styles.transactionIcon}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons
+                    name={isPositive ? "arrow-down" : "arrow-up"}
+                    size={22}
+                    color="#fff"
+                  />
+                </LinearGradient>
+                <View style={styles.transactionDetails}>
+                  <Text style={styles.transactionType}>{transactionTypeText}</Text>
+                  <View style={styles.transactionDateRow}>
+                    <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
+                    <Text style={styles.transactionDate}>
+                      {new Date(item.createdAt).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={[styles.transactionAmount, isPositive ? styles.amountPositive : styles.amountNegative]}>
+                  {isPositive ? '+' : ''}{item.amount.toFixed(2)} Bs.S
+                </Text>
+              </View>
+            );
+          })
+        )}
+      </View>
+    </ScrollView >
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.background,
   },
-  container: {
-    flex: 1,
+  loadingText: {
+    color: colors.textSecondary,
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 30,
+  },
+  header: {
+    paddingTop: 60,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    marginBottom: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: colors.white,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 4,
+  },
+  card: {
+    borderRadius: 24,
     padding: 20,
-    backgroundColor: colors.white,
+    marginHorizontal: 24,
+    marginTop: -50, // Overlap header
+    marginBottom: 24,
+    shadowColor: '#ED9B40',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
+    overflow: 'hidden',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  iconContainer: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  cardLabel: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 14,
+    flex: 1,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  rechargeButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#61C9A8',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  rechargeButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 20,
+    gap: 6,
+  },
+  rechargeText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+    letterSpacing: 0.3,
   },
   balanceContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  balanceLabel: {
-    fontSize: 18,
-  },
-  balanceAmount: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: colors.primary,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
     marginBottom: 20,
+  },
+  balanceText: {
+    color: colors.white,
+    fontSize: 40,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    letterSpacing: 0.8,
+  },
+  lowBalanceTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.danger,
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    gap: 6,
+    shadowColor: colors.danger,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  lowBalanceText: {
+    color: colors.white,
+    fontWeight: 'bold',
+    fontSize: 12,
+    letterSpacing: 0.5,
+  },
+  progressContainer: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  progressLabel: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  progressValue: {
+    color: colors.white,
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  progressBarBackground: {
+    height: 10,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 5,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 5,
+  },
+  decorativeCircle1: {
+    position: 'absolute',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255, 215, 100, 0.15)',
+    top: -50,
+    right: -50,
+  },
+  decorativeCircle2: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255, 180, 80, 0.15)',
+    bottom: -30,
+    left: -30,
+  },
+  searchSection: {
+    paddingHorizontal: 24,
+    marginBottom: 20,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 50,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.text,
+  },
+  filtersContainer: {
+    flexDirection: 'row',
+  },
+  filtersContent: {
+    paddingRight: 24,
+    gap: 10,
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  filterChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  filterTextActive: {
+    color: colors.white,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text,
+    letterSpacing: 0.3,
+  },
+  listContainer: {
+    paddingHorizontal: 24,
+    paddingBottom: 24,
   },
   transactionContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.lightGray,
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    padding: 16,
+    borderRadius: 18,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  transactionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  transactionDetails: {
+    flex: 1,
   },
   transactionType: {
     fontSize: 16,
-    textTransform: 'capitalize',
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 6,
+    letterSpacing: 0.2,
+  },
+  transactionDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  transactionDate: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  transactionAmount: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    letterSpacing: 0.3,
   },
   amountPositive: {
-    fontSize: 16,
     color: colors.success,
   },
   amountNegative: {
-    fontSize: 16,
-    color: colors.danger,
+    color: colors.secondary,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#F5F6FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: colors.textSecondary,
+    fontSize: 14,
   },
 });
 
